@@ -111,9 +111,6 @@ private:
     const float JERK_THRESHOLD      = 20.0f;  // Example jerk threshold
     const float MIN_DT              = 0.01f;  // Minimum time delta to avoid divide-by-zero
 
-    // For a simple approach without a “time” parameter,
-    // we’ll just assume we get a new reading at a fixed interval (e.g. dt=0.1s).
-    // In a real system, you’d pass an actual timestamp or dt to updateIMU.
     float fixedDeltaTime;
 
 public:
@@ -203,13 +200,12 @@ public:
         imu.updateIMU(ax, ay, az);
     }
     
-    // Compute final commanded speed: minimum of all sensor speed limits
     float computeFinalSpeed() {
         return std::min({ lidar.getSpeedLimit(),
                           pir.getSpeedLimit(),
                           ultrasonic.getSpeedLimit(),
-                          imu.getSpeedLimit() }); // Include IMU limit
+                          imu.getSpeedLimit() }); 
     }
 };
 
-#endif // MAIN_H
+#endif 
