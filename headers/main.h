@@ -170,19 +170,14 @@ public:
         }
 
         // 3. Free Fall Check
-        //    if acceleration remains below ~3 m/s^2, it signals free fall
-        //    This can be a simple immediate check or a timer-based check if you
-        //    want "prolonged" low acceleration. Shown here as immediate:
         if (accMag < FREEFALL_THRESHOLD) {
             danger = true;
             return;
         }
 
-        // If none of the danger conditions triggered, we consider it safe
         danger = false;
     }
 
-    // For simplicity, we either return max speed (safe) or stop (danger).
     float getSpeedLimit() const {
         return (danger) ? SPEED_STOP : SPEED_MAX;
     }
@@ -196,12 +191,9 @@ private:
     LiDARSensor      lidar;
     PIRSensor        pir;
     UltrasonicSensor ultrasonic;
-    IMUSensor        imu;  // Our new IMU sensor
+    IMUSensor        imu;  
 
 public:
-    // Update all sensor readings
-    // Example usage: 
-    //   sc.updateSensors(2.5f, false, 0.8f, 0.50f, 0.01f, 9.86f);
     void updateSensors(float lidarDist, bool humanDetected, float ultrasonicDist,
                        float ax, float ay, float az)
     {
