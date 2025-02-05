@@ -104,7 +104,7 @@ private:
     float prevAx, prevAy, prevAz;
     bool  danger;           // True if we detect a danger condition
     
-    // Configuration thresholds (tune as needed)
+    // Configuration thresholds
     const float ACC_LOW_THRESHOLD   = 7.0f;   // Below normal gravity
     const float ACC_HIGH_THRESHOLD  = 12.0f;  // Above normal gravity
     const float FREEFALL_THRESHOLD  = 3.0f;   // ~2-3 m/s^2 indicates near free-fall
