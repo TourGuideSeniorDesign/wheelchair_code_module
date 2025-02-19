@@ -1,0 +1,4 @@
+.vscode
+.idea
+cmake-*
+.DS_Store
