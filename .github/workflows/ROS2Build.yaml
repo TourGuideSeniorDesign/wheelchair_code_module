@@ -17,7 +17,7 @@ jobs:
 
       - name: Clone wheelchair_sensor_msgs
         run: |
-          git clone https://github.com/WheelchairSeniorDesign/wheelchair_sensor_msgs.git src/
+          git clone https://github.com/WheelchairSeniorDesign/wheelchair_sensor_msgs.git src/wheelchair_sensor_msgs
 
       - name: Install dependencies
         run: |
