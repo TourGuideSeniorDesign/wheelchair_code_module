@@ -15,6 +15,10 @@ jobs:
       - name: Create src directory if it does not exist
         run: mkdir -p src
 
+      - name: Clone wheelchair_sensor_msgs
+        run: |
+          git clone https://github.com/WheelchairSeniorDesign/wheelchair_sensor_msgs.git src/
+
       - name: Install dependencies
         run: |
           apt-get update
@@ -24,6 +28,6 @@ jobs:
       - name: Build and test ROS 2
         uses: ros-tooling/action-ros-ci@v0.3
         with:
-          package-name: wheelchair_sensor_msgs
+          package-name: wheelchair_core_module
           target-ros2-distro: humble
           skip-tests: true
