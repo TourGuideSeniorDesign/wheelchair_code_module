@@ -1,0 +1,29 @@
+name: ROS2 Build
+
+on: [push]
+
+jobs:
+  test_docker:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ros:humble
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create src directory if it does not exist
+        run: mkdir -p src
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
+
+      - name: Build and test ROS 2
+        uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: wheelchair_sensor_msgs
+          target-ros2-distro: humble
+          skip-tests: true
