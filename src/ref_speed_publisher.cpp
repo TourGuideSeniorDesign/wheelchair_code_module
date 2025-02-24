@@ -7,7 +7,7 @@
 RefSpeedPublisher::RefSpeedPublisher(rclcpp::Node::SharedPtr node)
 : node_(node)
 {
-    publisher_ = node_->create_publisher<wheelchair_sensor_msgs::msg::RefSpeed>("ref_speed", 10);
+    publisher_ = node_->create_publisher<wheelchair_sensor_msgs::msg::RefSpeed>("ref_speed", rclcpp::QoS(10).best_effort());
 }
 
 void RefSpeedPublisher::trigger_publish(RefSpeed ref_speed) {
