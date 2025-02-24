@@ -1,0 +1,47 @@
+name: ROS2 Build
+
+on: [push]
+
+jobs:
+  test_docker:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ros:humble
+    steps:
+      - name: Create src directory if it does not exist
+        run: mkdir -p src
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          path: src/wheelchair_core_module
+
+      - name: Clone wheelchair_sensor_msgs
+        run: |
+          git clone https://github.com/WheelchairSeniorDesign/wheelchair_sensor_msgs.git src/wheelchair_sensor_msgs
+
+      - name: List contents of src directory
+        run: ls -R src
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
+
+      - name: Source ROS 2 setup script
+        shell: bash
+        run: source /opt/ros/humble/setup.bash
+
+      - name: Build all ROS 2 packages
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install
+
+#      - name: Test all ROS 2 packages
+#        shell: bash
+#        run: |
+#          source /opt/ros/humble/setup.bash
+#          colcon test
