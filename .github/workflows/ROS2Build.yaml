@@ -29,7 +29,6 @@ jobs:
           apt-get update
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y
-          apt install libeigen3-dev
 
       - name: Source ROS 2 setup script
         shell: bash
