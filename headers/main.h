@@ -5,15 +5,14 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-// If we plan to store or use min_pt and max_pt as Eigen vectors.
 #include <Eigen/Core>
 
-// A bounding box struct to represent clusters found by the LiDAR node.
 struct BoundingBox {
     int cluster_id;
     Eigen::Vector3f min_pt;
     Eigen::Vector3f max_pt;
-    float distance;  // Distance from LiDAR (e.g., norm of box center).
+    float distance;   // Distance from LiDAR 
+    float angle_deg;  // Angle (in degrees) around Z-axis (0=front, +left, -right)
 };
 
 // Speed constants (in mph) - example values
@@ -45,9 +44,7 @@ public:
     // Manually update the obstacle distance, then compute speed limit
     void updateDistance(float distance) {
         obstacleDistance = distance;
-        // Example logic: if above LIDAR_FULL_THRESHOLD => max speed,
-        // else if above LIDAR_CAUTION_THRESHOLD => caution speed,
-        // else => slow.
+
         if (obstacleDistance >= LIDAR_FULL_THRESHOLD) {
             speedLimit = SPEED_MAX;
         } else if (obstacleDistance >= LIDAR_CAUTION_THRESHOLD) {
@@ -77,7 +74,7 @@ public:
     // If a human is detected, we command a full stop
     void updateDetection(bool detected) {
         humanDetected = detected;
-        speedLimit    = humanDetected ? SPEED_STOP : SPEED_MAX;
+        speedLimit    = (detected ? SPEED_STOP : SPEED_MAX);
     }
     
     float getSpeedLimit() const {
@@ -119,7 +116,7 @@ class IMUSensor {
 private:
     float ax, ay, az;       // Current accelerations
     float prevAx, prevAy, prevAz;
-    bool  danger;           // True if we detect a "danger" condition
+    bool  danger;           
     
     // Configuration thresholds (example values)
     const float ACC_LOW_THRESHOLD   = 7.0f;   // Below normal gravity (~9.81)
@@ -158,7 +155,7 @@ public:
     void checkDanger() {
         danger = false;
 
-        // 1) Overall Acceleration Magnitude
+        // Overall Acceleration Magnitude
         float accMag = std::sqrt(ax*ax + ay*ay + az*az);
         if (accMag < ACC_LOW_THRESHOLD || accMag > ACC_HIGH_THRESHOLD) {
             danger = true;
@@ -197,7 +194,7 @@ public:
     }
 };
 
-// SpeedController: fuses sensor outputs to compute final speed
+// SpeedController: fuses sensor outputs to compute final speed & steering
 class SpeedController {
 private:
     LiDARSensor      lidar;
@@ -206,7 +203,7 @@ private:
     IMUSensor        imu;  
 
 public:
-    // Update each sensor with raw data (lidarDist, etc.).
+    // Update each sensor with raw data (lidarDist, etc.)
     void updateSensors(float lidarDist, bool humanDetected, float ultrasonicDist,
                        float ax, float ay, float az)
     {
@@ -216,9 +213,9 @@ public:
         imu.updateIMU(ax, ay, az);
     }
     
-    //Directly update LiDAR from bounding boxes (pick the closest)
+    // Directly update LiDAR from bounding boxes: pick the closest bounding box
     void updateLidarFromBBoxes(const std::vector<BoundingBox>& bboxes) {
-        float minDist = 100.0f; // some "far" default
+        float minDist = 100.0f; // some far default
         if (!bboxes.empty()) {
             for (auto & box : bboxes) {
                 if (box.distance < minDist) {
@@ -230,7 +227,7 @@ public:
         lidar.updateDistance(minDist);
     }
 
-    // After sensors are updated, compute a final speed limit
+    // After sensors are updated, compute final speed limit
     float computeFinalSpeed() {
         // The final speed is the most restrictive among all sensors
         return std::min({
@@ -239,6 +236,30 @@ public:
             ultrasonic.getSpeedLimit(),
             imu.getSpeedLimit()
         });
+    }
+
+    // Decide steering angle based on LiDAR bounding boxes
+    // This example uses ±30° cone and 2m distance threshold
+    float decideSteeringAngle(const std::vector<BoundingBox>& bboxes) {
+        float frontConeDeg = 30.0f;
+        float dangerDist   = 2.0f;
+        float steerAngle   = 0.0f;  // Default: go straight
+
+        for (auto &box : bboxes) {
+            //
+            if (box.distance < dangerDist && std::fabs(box.angle_deg) < frontConeDeg) {
+                // If obstacle is in front cone
+                if (box.angle_deg > 0.0f) {
+                    // Obstacle left => steer right
+                    steerAngle = -30.0f;
+                } else {
+                    // Obstacle right => steer left
+                    steerAngle = 30.0f;
+                }
+                break; // Found a problem, set steering, done
+            }
+        }
+        return steerAngle;
     }
 };
 
