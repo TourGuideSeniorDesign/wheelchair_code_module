@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-// Only needed if you plan to store or use min_pt and max_pt as Eigen vectors.
+// If we plan to store or use min_pt and max_pt as Eigen vectors.
 #include <Eigen/Core>
 
 // A bounding box struct to represent clusters found by the LiDAR node.
@@ -16,9 +16,7 @@ struct BoundingBox {
     float distance;  // Distance from LiDAR (e.g., norm of box center).
 };
 
-// -----------------------------------------------------------------------------
 // Speed constants (in mph) - example values
-// -----------------------------------------------------------------------------
 const float SPEED_MAX     = 3.0f;  // Full speed
 const float SPEED_CAUTION = 2.0f;  // Caution
 const float SPEED_SLOW    = 1.0f;  // Slow
@@ -218,7 +216,7 @@ public:
         imu.updateIMU(ax, ay, az);
     }
     
-    // OPTIONAL: directly update LiDAR from bounding boxes (pick the closest)
+    //Directly update LiDAR from bounding boxes (pick the closest)
     void updateLidarFromBBoxes(const std::vector<BoundingBox>& bboxes) {
         float minDist = 100.0f; // some "far" default
         if (!bboxes.empty()) {
