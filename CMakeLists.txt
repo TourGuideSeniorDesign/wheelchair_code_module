@@ -14,7 +14,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(wheelchair_sensor_msgs REQUIRED)
-find_package(Eigen3 REQUIRED)  # <-- Add this for Eigen
+find_package(Eigen3 REQUIRED)  
 
 # Add your executable
 add_executable(wheelchair
