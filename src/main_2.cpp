@@ -1,10 +1,11 @@
 #include "rclcpp/rclcpp.hpp"
-#include "sensors_subscriber.h"  
+#include "sensors_subscriber.h"  // Assumes this provides SensorsSubscriber and SensorData
 
 #include <chrono>
 #include <memory>
 #include <string>
 #include <algorithm>
+#include <cmath>
 
 using namespace std::chrono_literals;
 
@@ -13,7 +14,11 @@ const float SPEED_MAX     = 3.0f;  // Full speed
 const float SPEED_CAUTION = 2.0f;  // Reduced speed
 const float SPEED_STOP    = 0.0f;  // Stop
 
-// Finite State Machine (FSM) 
+// IMU thresholds (example values)
+const float ACC_LOW_THRESHOLD  = 7.0f;   // Below normal acceleration threshold
+const float ACC_HIGH_THRESHOLD = 12.0f;  // Above normal acceleration threshold
+
+// Finite State Machine (FSM) states
 enum class RobotState {
   NORMAL,   // Full speed
   CAUTION,  // Reduced speed
@@ -24,6 +29,7 @@ class StateMachine {
 public:
   StateMachine() : current_state_(RobotState::NORMAL) {}
 
+  // Update the FSM state based on the computed speed limit
   void update(float speed_limit) {
     if (speed_limit == SPEED_STOP) {
       current_state_ = RobotState::STOP;
@@ -50,13 +56,15 @@ private:
 class WheelchairNode : public rclcpp::Node {
 public:
   WheelchairNode() : Node("wheelchair_node") {
-    // A timer to periodically update the FSM using live sensor data (every 500ms)
+    // Create a timer to periodically update the FSM using live sensor data (every 500ms)
     timer_ = this->create_wall_timer(500ms, std::bind(&WheelchairNode::updateFSM, this));
     RCLCPP_INFO(this->get_logger(), "Wheelchair node started.");
   }
 
   // Call this after the node is fully constructed
   void initialize() {
+    // Create the sensor subscriber.
+    // SensorsSubscriber is assumed to accept a rclcpp::Node::SharedPtr.
     sensor_subscriber_ = std::make_shared<SensorsSubscriber>(this->shared_from_this());
   }
 
@@ -64,32 +72,46 @@ private:
   // This method polls the latest sensor data, computes a decision, and updates the FSM.
   void updateFSM() {
     // Retrieve the latest sensor data.
-    // It is assumed that SensorData has a field named ultrasonic_front_0 (in meters)
+    // It is assumed that SensorData has the following fields:
+    //  - ultrasonic_front_0 (in meters)
+    //  - linear_acceleration_x, linear_acceleration_y, linear_acceleration_z
     auto sensor_data = sensor_subscriber_->get_latest_sensor_data();
 
-    // Use the ultrasonic sensor reading for our decision.
+    // --- Ultrasonic Sensor Logic ---
+    // Use ultrasonic_front_0 to determine a speed limit.
     float ultrasonic_distance = sensor_data.ultrasonic_front_0;
-
-    // Determine the speed limit based on thresholds:
-    // - If distance >= 1.0 m, then SPEED_MAX (NORMAL)
-    // - If between 0.5 and 1.0 m, then SPEED_CAUTION (CAUTION)
-    // - If less than 0.5 m, then SPEED_STOP (STOP)
-    float speed_limit = SPEED_MAX;
+    float ultrasonic_speed_limit = SPEED_MAX;
     if (ultrasonic_distance >= 1.0f) {
-      speed_limit = SPEED_MAX;
+      ultrasonic_speed_limit = SPEED_MAX;
     } else if (ultrasonic_distance >= 0.5f) {
-      speed_limit = SPEED_CAUTION;
+      ultrasonic_speed_limit = SPEED_CAUTION;
     } else {
-      speed_limit = SPEED_STOP;
+      ultrasonic_speed_limit = SPEED_STOP;
     }
 
-    // Update the FSM with the computed speed limit
-    fsm_.update(speed_limit);
+    // --- IMU Sensor Logic ---
+    // Compute acceleration magnitude from the IMU data.
+    float ax = sensor_data.linear_acceleration_x;
+    float ay = sensor_data.linear_acceleration_y;
+    float az = sensor_data.linear_acceleration_z;
+    float accMag = std::sqrt(ax * ax + ay * ay + az * az);
+    float imu_speed_limit = SPEED_MAX;
+    // If acceleration is too low or too high, assume a dangerous condition and require stop.
+    if (accMag < ACC_LOW_THRESHOLD || accMag > ACC_HIGH_THRESHOLD) {
+      imu_speed_limit = SPEED_STOP;
+    }
 
-    // Log the sensor reading, computed speed limit, and current FSM state.
+    // --- Combine Decisions ---
+    // The final speed limit is the most restrictive (lowest) of the two.
+    float final_speed_limit = std::min(ultrasonic_speed_limit, imu_speed_limit);
+
+    // Update the FSM with the final computed speed limit.
+    fsm_.update(final_speed_limit);
+
+    // Log the sensor readings, computed limits, and current FSM state.
     RCLCPP_INFO(this->get_logger(),
-                "Ultrasonic front: %.2f m, Computed Speed: %.2f, FSM State: %s",
-                ultrasonic_distance, speed_limit, fsm_.getStateName().c_str());
+                "Ultrasonic: %.2f m, IMU acc: %.2f, Final Speed: %.2f, FSM State: %s",
+                ultrasonic_distance, accMag, final_speed_limit, fsm_.getStateName().c_str());
   }
 
   rclcpp::TimerBase::SharedPtr timer_;
@@ -102,11 +124,10 @@ int main(int argc, char * argv[]) {
 
   // Create the node using std::make_shared to allow shared_from_this()
   auto node = std::make_shared<WheelchairNode>();
-  
-  // Initialize the sensor subscriber now that the node is fully constructed
+  // Initialize the sensor subscriber now that the node is fully constructed.
   node->initialize();
 
-  // Spin to process callbacks 
+  // Spin to process callbacks (both for the sensor subscriber and the timer)
   rclcpp::spin(node);
   
   rclcpp::shutdown();
