@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "sensors_subscriber.h"  // Assumes this provides SensorsSubscriber and SensorData
+#include "sensors_subscriber.h"  
 
 #include <chrono>
 #include <memory>
@@ -9,7 +9,7 @@
 
 using namespace std::chrono_literals;
 
-// Speed constants (in mph or your chosen units)
+// Speed constants 
 const float SPEED_MAX     = 3.0f;  // Full speed
 const float SPEED_CAUTION = 2.0f;  // Reduced speed
 const float SPEED_STOP    = 0.0f;  // Stop
@@ -72,13 +72,9 @@ private:
   // This method polls the latest sensor data, computes a decision, and updates the FSM.
   void updateFSM() {
     // Retrieve the latest sensor data.
-    // It is assumed that SensorData has the following fields:
-    //  - ultrasonic_front_0 (in meters)
-    //  - linear_acceleration_x, linear_acceleration_y, linear_acceleration_z
     auto sensor_data = sensor_subscriber_->get_latest_sensor_data();
 
-    // --- Ultrasonic Sensor Logic ---
-    // Use ultrasonic_front_0 to determine a speed limit.
+    // Ultrasonic Sensor Logic
     float ultrasonic_distance = sensor_data.ultrasonic_front_0;
     float ultrasonic_speed_limit = SPEED_MAX;
     if (ultrasonic_distance >= 1.0f) {
@@ -89,7 +85,7 @@ private:
       ultrasonic_speed_limit = SPEED_STOP;
     }
 
-    // --- IMU Sensor Logic ---
+    // IMU Sensor Logic 
     // Compute acceleration magnitude from the IMU data.
     float ax = sensor_data.linear_acceleration_x;
     float ay = sensor_data.linear_acceleration_y;
@@ -101,8 +97,7 @@ private:
       imu_speed_limit = SPEED_STOP;
     }
 
-    // --- Combine Decisions ---
-    // The final speed limit is the most restrictive (lowest) of the two.
+    // Combine Decisions 
     float final_speed_limit = std::min(ultrasonic_speed_limit, imu_speed_limit);
 
     // Update the FSM with the final computed speed limit.
