@@ -25,7 +25,10 @@ add_executable(wheelchair
         src/ref_speed_publisher.cpp
         src/fingerprint_subscriber.cpp
         src/sensors_subscriber.cpp)
-ament_target_dependencies(wheelchair rclcpp wheelchair_sensor_msgs)
+ament_target_dependencies(wheelchair 
+rclcpp 
+wheelchair_sensor_msgs
+)
 
 install(TARGETS
         wheelchair
