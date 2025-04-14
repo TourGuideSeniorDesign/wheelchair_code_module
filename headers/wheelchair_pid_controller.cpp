@@ -19,7 +19,7 @@ double normalizeAngle(double angle) {
 
 // Replace this with the actual sensor reading.
 double getDesiredHeading() {
-    // For example, return 0.0 if you want to face north.
+    // For example, return 0.0 if we want to face north.
     return 0.0;
 }
 
@@ -31,7 +31,7 @@ double getCurrentHeading() {
 
 // Replace this with the logic to map overall speed to a base PWM percentage.
 double getBasePWM() {
-    // For instance, 3 mph might map to 100% PWM; here, we use 70% for demonstration.
+    // For instance, 3 mph might map to 100% PWM; here, we use 70%.
     return 70.0;
 }
 
