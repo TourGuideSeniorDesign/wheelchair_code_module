@@ -6,6 +6,25 @@
 #include "fingerprint_subscriber.hpp"
 #include "ref_speed_publisher.hpp"
 #include <thread>
+#include <deque>
+#include <numeric>
+
+const size_t BUFFER_SIZE = 5; // Size of the rolling average buffer
+
+std::deque<int8_t> left_speed_buffer;
+std::deque<int8_t> right_speed_buffer;
+
+auto calculate_average = [](const std::deque<int8_t>& buffer) {
+    return std::accumulate(buffer.begin(), buffer.end(), 0.0) / buffer.size();
+};
+
+// Add new values to the buffer and maintain its size
+auto update_buffer = [](std::deque<int8_t>& buffer, int8_t new_value) {
+    if (buffer.size() >= BUFFER_SIZE) {
+        buffer.pop_front();
+    }
+    buffer.push_back(new_value);
+};
 
 int main(int argc, char *argv[]) {
     // Initialize the ROS 2 node and setting up subscribers and publishers
@@ -33,11 +52,17 @@ int main(int argc, char *argv[]) {
       // Example to show how to get the latest sensor data
       //Right now it just grabs the sensor data and publishes the joystick speeds on the ref_speed topic
         auto sensor_data = sensors_subscriber->get_latest_sensor_data();
-        RefSpeed ref_speed;
-        ref_speed.leftSpeed = sensor_data.left_speed;
-        ref_speed.rightSpeed = sensor_data.right_speed;
-        ref_speed_publisher->trigger_publish(ref_speed);
 
+        // Inside the loop
+		update_buffer(left_speed_buffer, sensor_data.left_speed);
+		update_buffer(right_speed_buffer, sensor_data.right_speed);
+
+        RefSpeed ref_speed;
+
+		ref_speed.leftSpeed = static_cast<int8_t>(calculate_average(left_speed_buffer));
+		ref_speed.rightSpeed = static_cast<int8_t>(calculate_average(right_speed_buffer));
+		ref_speed_publisher->trigger_publish(ref_speed);
+               
         // sleep to maintain the rate
         rate.sleep();
      }
