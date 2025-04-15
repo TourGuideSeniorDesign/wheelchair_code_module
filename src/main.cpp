@@ -25,6 +25,9 @@ int main(int argc, char *argv[]) {
 
     SpeedController controller;
 
+    // Set the rate to 10 Hz
+    rclcpp::Rate rate(30);
+
     //Loop used to get data while the node is running
     while (rclcpp::ok()){
       // Example to show how to get the latest sensor data
@@ -34,7 +37,9 @@ int main(int argc, char *argv[]) {
         ref_speed.leftSpeed = sensor_data.left_speed;
         ref_speed.rightSpeed = sensor_data.right_speed;
         ref_speed_publisher->trigger_publish(ref_speed);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        // sleep to maintain the rate
+        rate.sleep();
      }
 
     // Scenario 1:
