@@ -9,7 +9,7 @@
 #include <deque>
 #include <numeric>
 
-const size_t BUFFER_SIZE = 250; // Size of the rolling average buffer
+const size_t BUFFER_SIZE = 15; // Size of the rolling average buffer
 
 std::deque<int8_t> left_speed_buffer;
 std::deque<int8_t> right_speed_buffer;
