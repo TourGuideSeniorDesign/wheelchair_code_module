@@ -9,7 +9,7 @@
 #include <deque>
 #include <numeric>
 
-const size_t BUFFER_SIZE = 5; // Size of the rolling average buffer
+const size_t BUFFER_SIZE = 250; // Size of the rolling average buffer
 
 std::deque<int8_t> left_speed_buffer;
 std::deque<int8_t> right_speed_buffer;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     });
 
     RCLCPP_INFO(node->get_logger(), "Wheelchair node has started.");
-
+	RCLCPP_INFO(node->get_logger(), "RC Buffer Size: %ld", BUFFER_SIZE);
     SpeedController controller;
 
     // Set the rate to 10 Hz
