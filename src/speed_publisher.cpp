@@ -19,6 +19,7 @@
 #include <cmath>
 
 #include "sensors_subscriber.h"
+#include "speed_publisher.hpp"
 
 // Speed constants
 static constexpr float SPEED_MAX     = 3.0f;  
