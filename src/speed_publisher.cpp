@@ -25,10 +25,6 @@ static constexpr float SPEED_MAX     = 3.0f;
 static constexpr float SPEED_CAUTION = 2.0f;  
 static constexpr float SPEED_STOP    = 0.0f;  
 
-// IMU thresholds
-static constexpr float ACC_LOW_THRESHOLD  = 7.0f;   
-static constexpr float ACC_HIGH_THRESHOLD = 12.0f;  
-
 // Robot states
 enum class RobotState {
   NORMAL,
