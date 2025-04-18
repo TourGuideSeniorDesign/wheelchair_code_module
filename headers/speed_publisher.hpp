@@ -12,7 +12,6 @@ public:
     speed_pub_ = create_publisher<std_msgs::msg::Float32>("speed_cmd", 10);
   }
 
-  /// Call this from your FSM with the speed you decided (m/s)
   void publish(float v)
   {
     std_msgs::msg::Float32 msg;
