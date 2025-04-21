@@ -5,6 +5,8 @@
 #ifndef WHEELCHAIR_CODE_MODULE_TEMP_MONITOR_H
 #define WHEELCHAIR_CODE_MODULE_TEMP_MONITOR_H
 
+#include <string>
+
 std::string findCpuThermalZone();
 
 double readTemperature(const std::string& tempPath);

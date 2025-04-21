@@ -26,11 +26,6 @@ add_executable(wheelchair
   src/sensors_subscriber.cpp
 )
 
-# Adding the fan speed executable
-add_executable(temp_monitor
-        src/temp_monitor.cpp
-        src/fan_publisher.cpp
-)
 
 # Declare ROS dependencies
 ament_target_dependencies(
@@ -57,6 +52,34 @@ target_link_libraries(
 # Install
 install(TARGETS
   wheelchair
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Adding the fan speed executable
+add_executable(temp_monitor
+        src/temp_monitor.cpp
+        src/fan_publisher.cpp
+)
+
+# Declare ROS dependencies
+ament_target_dependencies(
+  temp_monitor
+  rclcpp
+  wheelchair_sensor_msgs
+)
+
+# Include directories (Eigen + your headers)
+target_include_directories(
+  temp_monitor
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/headers
+  ${CMAKE_CURRENT_SOURCE_DIR}/headers/wheelchair_code_module
+)
+
+
+# Install
+install(TARGETS
+  temp_monitor
   DESTINATION lib/${PROJECT_NAME}
 )
 
