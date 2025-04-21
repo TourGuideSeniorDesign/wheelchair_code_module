@@ -44,7 +44,7 @@ double readTemperature(const std::string& tempPath) {
     return -1.0;
 }
 
-int main() {
+int main(int argc, char** argv) {
     std::string tempPath = findCpuThermalZone();
     if (tempPath.empty()) {
         std::cerr << "CPU thermal zone not found." << std::endl;
@@ -52,7 +52,7 @@ int main() {
     }
 
     // Initialize the ROS 2 node and setting up subscribers and publishers
-    rclcpp::init();
+    rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("temperature_monitor");
     auto fan_publisher = std::make_shared<FanPublisher>(node);
 
