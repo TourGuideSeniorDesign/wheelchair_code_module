@@ -26,6 +26,12 @@ add_executable(wheelchair
   src/sensors_subscriber.cpp
 )
 
+# Adding the fan speed executable
+add_executable(temp_monitor
+        src/temp_monitor.cpp
+        src/fan_publisher.cpp
+)
+
 # Declare ROS dependencies
 ament_target_dependencies(
   wheelchair
