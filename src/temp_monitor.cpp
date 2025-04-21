@@ -52,7 +52,7 @@ int main() {
     }
 
     // Initialize the ROS 2 node and setting up subscribers and publishers
-    rclcpp::init(argc, argv);
+    rclcpp::init();
     auto node = std::make_shared<rclcpp::Node>("temperature_monitor");
     auto fan_publisher = std::make_shared<FanPublisher>(node);
 
