@@ -10,15 +10,17 @@ public:
   ObstaclePublisher();
 
 private:
-  /* ── subscriber ─────────────────────────────────────────── */
+  /* subscriber */
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub_;
 
-  // single-flag 
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              obstacle_flag_pub_;
-  // new flags
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              front_clear_pub_;
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              back_clear_pub_;
-  // visuals
+  /* publishers */
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr front_clear_pub_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr back_clear_pub_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr left_turn_clear_pub_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr right_turn_clear_pub_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr obstacle_flag_pub_;
+
+  /* diagnostics */
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr    obstacles_cloud_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr markers_pub_;
 
