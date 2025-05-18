@@ -2,7 +2,9 @@
 
 ObstacleSubscriber::ObstacleSubscriber(const rclcpp::Node::SharedPtr& node,
                                        std::atomic_bool& front_clear_flag,
-                                       std::atomic_bool& back_clear_flag)
+                                       std::atomic_bool& back_clear_flag,
+                                       std::atomic_bool& left_turn_clear,
+                                       std::atomic_bool& right_turn_clear)
 {
   sub_front_ = node->create_subscription<std_msgs::msg::Bool>(
       "front_clear", 10,
