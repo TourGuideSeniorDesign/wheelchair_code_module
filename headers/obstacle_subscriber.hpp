@@ -10,7 +10,9 @@ class ObstacleSubscriber
 public:
   ObstacleSubscriber(const rclcpp::Node::SharedPtr& node,
                      std::atomic_bool& front_clear_flag,
-                     std::atomic_bool& back_clear_flag);
+                     std::atomic_bool& back_clear_flag,
+                     std::atomic_bool& left_turn_clear,
+                     std::atomic_bool& right_turn_clear);
 
 private:
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_front_;
