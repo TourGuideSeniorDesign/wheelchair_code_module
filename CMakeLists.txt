@@ -65,7 +65,26 @@ add_executable(wheelchair
   src/speed_publisher.cpp
 )
 
+add_executable(stopping 
+  src/main_stopping.cpp
+  src/fan_publisher.cpp
+  src/light_publisher.cpp
+  src/ref_speed_publisher.cpp
+  src/fingerprint_subscriber.cpp
+  src/sensors_subscriber.cpp
+  src/obstacle_subscriber.cpp
+  src/speed_publisher.cpp
+ )
+
 ament_target_dependencies(wheelchair
+  rclcpp
+  wheelchair_sensor_msgs
+  sensor_msgs
+  std_msgs
+  pcl_conversions
+)
+
+ament_target_dependencies(stopping
   rclcpp
   wheelchair_sensor_msgs
   sensor_msgs
@@ -79,7 +98,18 @@ target_include_directories(wheelchair PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/headers
 )
 
+target_include_directories(stopping PUBLIC
+  ${EIGEN3_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/headers
+)
+
 target_link_libraries(wheelchair
+  obstacle_publisher         
+  Eigen3::Eigen
+)
+
+target_link_libraries(stopping
   obstacle_publisher         
   Eigen3::Eigen
 )
@@ -102,6 +132,7 @@ install(TARGETS
   wheelchair
   obstacle_publisher_node
   obstacle_publisher
+  stopping
   DESTINATION lib/${PROJECT_NAME}
 )
 
