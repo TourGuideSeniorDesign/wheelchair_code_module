@@ -4,6 +4,7 @@
                2 = autonomous                                          */
 
 #include "main.h"
+#include "uwb_subscriber.hpp"  
 #include "rclcpp/rclcpp.hpp"
 #include "sensors_subscriber.hpp"
 #include "obstacle_subscriber.hpp"
@@ -13,10 +14,12 @@
 #include <thread>
 
 /* ── config ─────────────────────────────────────────────── */
-constexpr int    SPEED                 = 15;
+constexpr int    SPEED                 = 100;
 constexpr int    INNER_SPEED           = SPEED / 4;    // 3
 constexpr double PIVOT_DURATION        = 2.5;          // s
 constexpr double RETURN_PIVOT_DURATION = 2.5;          // s
+constexpr float UWB_STOP_RANGE = 2.15;  
+constexpr float UWB_TURN_RANGE = 3; //change accordingly
 
 /* ── shared flags ───────────────────────────────────────── */
 std::atomic_bool front_clear{true};
@@ -24,6 +27,7 @@ std::atomic_bool back_clear{true};
 std::atomic_bool left_turn_clear{true};   //  we only pivot left
 std::atomic_bool right_turn_clear{true};  //  kept for wiring
 std::atomic_int  drive_mode{0};
+std::atomic<float> uwb_dist6{0.0f};
 
 /* ── FSM for autonomous mode ────────────────────────────── */
 enum class Mode { STRAIGHT, PIVOT, RETURN_PIVOT, STOP };
@@ -51,10 +55,13 @@ int main(int argc, char *argv[])
             drive_mode.store(m->data, std::memory_order_relaxed);
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
+        
+    /* receive message from UWB sensors */
+    auto uwb_sub = std::make_shared<UWBSubscriber>(node);    
 
     /* spin ROS callbacks in a background thread */
     rclcpp::executors::SingleThreadedExecutor exec;
-    exec.add_node(node);
+    exec.add_node(node);               
     std::thread spin_thread([&]{ exec.spin(); });
 
     /* main control loop – 30 Hz */
@@ -124,6 +131,13 @@ int main(int argc, char *argv[])
         {
             bool front_ok =  front_clear.load();
             bool left_ok  =  left_turn_clear.load();
+            float d6 = uwb_sub->dist6();
+            bool  uwb_clear = d6 > UWB_STOP_RANGE;
+            bool  uwb_turn_clear = (d2 > 0.0f) && (d2 > UWB_TURN_RANGE);
+            bool  uwb_blocked = (d6 > 0.0f) && (d6 <= UWB_STOP_RANGE);
+            if (uwb_blocked) {
+    		mode = Mode::STOP;
+	    }
 
             switch (mode)
             {
@@ -131,7 +145,7 @@ int main(int argc, char *argv[])
             case Mode::STRAIGHT:
                 if (!front_ok)                   // front blocked
                 {
-                    if (!left_ok)
+                    if (!left_ok || !uwb_clear)
                     {   mode = Mode::STOP; }     // nowhere to go
                     else
                     {   pivot_dir = -1;          // always pivot left
