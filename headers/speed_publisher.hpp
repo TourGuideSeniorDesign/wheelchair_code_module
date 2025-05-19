@@ -2,7 +2,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/bool.hpp>
-#include "sensors_subscriber.h"          
+#include "sensors_subscriber.hpp"          
 
 namespace wheelchair
 {
