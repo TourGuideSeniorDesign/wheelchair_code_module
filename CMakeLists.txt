@@ -63,6 +63,7 @@ add_executable(wheelchair
   src/sensors_subscriber.cpp
   src/obstacle_subscriber.cpp
   src/speed_publisher.cpp
+  src/uwb_subscriber.cpp
 )
 
 add_executable(stopping 
