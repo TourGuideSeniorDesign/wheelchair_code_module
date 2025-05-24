@@ -27,4 +27,3 @@ ObstacleSubscriber::ObstacleSubscriber(const rclcpp::Node::SharedPtr& node,
   RCLCPP_INFO(node->get_logger(),
               "ObstacleSubscriber: front_clear & back_clear wired up.");
 }
-

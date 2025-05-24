@@ -67,4 +67,3 @@ int main(int argc, char *argv[])
     spin_thread.join();
     return 0;
 }
-

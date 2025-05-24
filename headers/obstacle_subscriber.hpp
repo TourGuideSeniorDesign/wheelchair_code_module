@@ -18,4 +18,3 @@ private:
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_front_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_back_;
 };
-

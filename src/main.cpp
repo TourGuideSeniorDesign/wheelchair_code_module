@@ -67,6 +67,7 @@ int main(int argc, char* argv[])
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
         
+
     auto electron_room = node->create_subscription<std_msgs::msg::Int32>(
         "electron_room", 10,
         [node](std_msgs::msg::Int32::SharedPtr m)
@@ -75,6 +76,7 @@ int main(int argc, char* argv[])
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
         
+
     /* receive message from UWB sensors */
     auto uwb_sub = std::make_shared<UWBSubscriber>(node);
     
@@ -197,10 +199,7 @@ int main(int argc, char* argv[])
             	continue;
             
             }
-            
 
-          
-            
             if(turning90 == true  && !after_spin){
             	double elapsed = (steady_clock.now() - spin_start).seconds();
             	RCLCPP_INFO(node->get_logger(), "Turning");
@@ -246,6 +245,7 @@ int main(int argc, char* argv[])
                     break;
 
                 case Mode::PIVOT:
+
                     if (!left_ok) { mode = Mode::STOP; break; }
                     timer += DT;
                     cmd.leftSpeed  = (pivot_dir == +1) ? SPEED       : INNER_SPEED;
@@ -257,18 +257,24 @@ int main(int argc, char* argv[])
                     break;
 
                 case Mode::RETURN:
+
                     if (!left_ok) { mode = Mode::STOP; break; }
+
                     timer += DT;
                     cmd.leftSpeed  = (pivot_dir == +1) ? SPEED       : INNER_SPEED;
                     cmd.rightSpeed = (pivot_dir == +1) ? INNER_SPEED : SPEED;
                     if (timer >= RETURN_TIME) {
+
                         timer = 0;  mode = front_ok ? Mode::STRAIGHT : Mode::STOP;
+
                     }
                     break;
 
                 case Mode::STOP:
                     cmd = {0,0};
+
                     if (front_ok) mode = Mode::STRAIGHT;
+
                     break;
                 }
 

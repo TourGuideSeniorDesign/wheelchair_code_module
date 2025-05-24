@@ -189,6 +189,3 @@ void ObstaclePublisher::cloudCallback(const sensor_msgs::msg::PointCloud2::Share
   pc.header = msg->header;
   obstacles_cloud_pub_->publish(pc);
 }
-
-
-

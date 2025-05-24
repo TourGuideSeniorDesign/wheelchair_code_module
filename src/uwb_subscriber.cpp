@@ -23,4 +23,3 @@ void UWBSubscriber::msgCallback(
     dist6_.store(msg->dist6, std::memory_order_relaxed);
 
 }
-
