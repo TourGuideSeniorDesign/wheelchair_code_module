@@ -160,15 +160,37 @@ target_link_libraries(obstacle_publisher_node
   obstacle_publisher
 )
 
+# Adding the fan speed executable
+add_executable(temp_monitor
+        src/temp_monitor.cpp
+        src/fan_publisher.cpp
+)
+
+# Declare ROS dependencies
+ament_target_dependencies(
+  temp_monitor
+  rclcpp
+  wheelchair_sensor_msgs
+)
+
+# Include directories (Eigen + your headers)
+target_include_directories(
+  temp_monitor
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/headers
+)
+
 install(TARGETS
   wheelchair
   obstacle_publisher_node
   obstacle_publisher
   stopping
   compass
+  temp_monitor
   DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY headers/ DESTINATION include)
+
 
 ament_package()
