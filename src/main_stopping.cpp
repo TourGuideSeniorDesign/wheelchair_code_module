@@ -1,3 +1,5 @@
+/* main.cpp – fixed to match ObstacleSubscriber(node, front, back, left, right) */
+
 #include "main.h"
 #include "rclcpp/rclcpp.hpp"
 #include "fan_publisher.hpp"
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
         bool front_blocked = !front_clear.load(std::memory_order_relaxed);
         bool back_blocked  = !back_clear.load(std::memory_order_relaxed);
 
-        if (front_blocked && back_blocked) {                
+        if (front_blocked && back_blocked) {                // both ways blocked
             ref_speed = {0, 0};
         } else if (front_blocked) {                         // stop forward
             if (ref_speed.leftSpeed  > 0) ref_speed.leftSpeed  = 0;

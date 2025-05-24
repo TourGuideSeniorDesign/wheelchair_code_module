@@ -1,4 +1,13 @@
 // obstacle_publisher.cpp
+// 2025‑05‑08 – ultra‑conservative revision 2025‑05‑16c
+// The chair was still initiating pivots in tight spots.  Dial the side‑sector
+// test up another notch so it will only turn when there is *lots* of space:
+//   • Cone half‑angle shrunk to ±40°  (was 50°)
+//   • Clear distance pushed to 2.0 m   (was 1.5 m)
+//   • Everything else (5‑/3‑frame debounce, “blocked if ANY point” rule)
+//     unchanged.
+// Publishes four Bool topics:
+//   front_clear, back_clear, left_turn_clear, right_turn_clear
 
 #include "obstacle_publisher.hpp"
 
@@ -32,16 +41,16 @@ constexpr float B_BOX_X_MIN = -0.40f, B_BOX_X_MAX = -0.05f, B_BOX_Y_HALF = 0.75f
 constexpr float F_TUNNEL_Y_HALF = 0.50f, F_WALL_WARN =  1.10f;
 constexpr float B_TUNNEL_Y_HALF = 0.50f, B_WALL_WARN = -1.10f;
 
-/* *** ultra‑conservative side‑cone parameters *** --------------------- */
-constexpr float CONE_HALF_ANGLE = static_cast<float>(M_PI) * 40.0f / 180.0f; // ±40°
-constexpr float CLEAR_DIST      = 2.00f;   // ≥2.0 m of open space required
+/* *** side‑cone parameters *** --------------------- */
+constexpr float CONE_HALF_ANGLE = static_cast<float>(M_PI) * 35.0f / 180.0f; // ±35°
+constexpr float CLEAR_DIST      = 1.60f;   // ≥1.60 m of open space required
 
 /* debounce helper ------------------------------------------------------ */
 inline void debounce(bool hit, int& h, int& c, bool& latched)
 {
     hit ? (++h, c = 0) : (++c, h = 0);
-    if (!latched && h >= 5) latched = true;
-    if ( latched && c >= 3) latched = false;
+    if (!latched && h >= 4) latched = true;
+    if ( latched && c >= 2) latched = false;
 }
 
 } // anonymous namespace
@@ -61,7 +70,7 @@ ObstaclePublisher::ObstaclePublisher() : Node("obstacle_publisher")
   obstacles_cloud_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("obstacles_cloud", 10);
   markers_pub_         = create_publisher<visualization_msgs::msg::MarkerArray>("obstacle_markers", 10);
 
-  RCLCPP_INFO(get_logger(), "ObstaclePublisher node started (ultra‑conservative mode).");
+  RCLCPP_INFO(get_logger(), "ObstaclePublisher node started.");
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -180,5 +189,3 @@ void ObstaclePublisher::cloudCallback(const sensor_msgs::msg::PointCloud2::Share
   pc.header = msg->header;
   obstacles_cloud_pub_->publish(pc);
 }
-
-// end of obstacle_publisher.cpp

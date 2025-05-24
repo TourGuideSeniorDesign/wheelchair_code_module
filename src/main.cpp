@@ -18,12 +18,13 @@
 
 /* ── constants ─────────────────────────────────────────── */
 constexpr int    SPEED           = 30;
-constexpr int    INNER_SPEED     = SPEED / 4;
+constexpr int    INNER_SPEED     = 0;
 constexpr double PIVOT_TIME      = 2.5;
 constexpr double RETURN_TIME     = 2.5;
-constexpr float  UWB_STOP_RANGE  = 2.15;   // d6 ≤ 2.15 m → hard stop
+constexpr float  UWB_STOP_RANGE  = 4.5;   // d6 ≤ 2.15 m → hard stop
 constexpr float  UWB_TURN_RANGE  = 3.0;   // d2 ≤ 3.0  m → spin + FSM
-constexpr double TURN90_TIME     = 3.2;     
+constexpr double TURN90_TIME     = 3.2; 
+constexpr double UWB_STOPPING_FIRST = 1.9;    
 
 
 /* ── shared flags set by subscribers ───────────────────── */
@@ -32,6 +33,7 @@ std::atomic_bool back_clear{true};
 std::atomic_bool left_turn_clear{true};
 std::atomic_bool right_turn_clear{true};
 std::atomic_int  drive_mode{0};
+std::atomic_int  room{0};
 
 /* ── FSM state for complex part ────────────────────────── */
 enum class Mode { STRAIGHT, PIVOT, RETURN, STOP };
@@ -65,6 +67,16 @@ int main(int argc, char* argv[])
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
         
+
+    auto electron_room = node->create_subscription<std_msgs::msg::Int32>(
+        "electron_room", 10,
+        [node](std_msgs::msg::Int32::SharedPtr m)
+        {
+            room.store(m->data, std::memory_order_relaxed);
+            RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
+        });
+        
+
     /* receive message from UWB sensors */
     auto uwb_sub = std::make_shared<UWBSubscriber>(node);
     
@@ -83,6 +95,7 @@ int main(int argc, char* argv[])
     while (rclcpp::ok())
     {
         int sel = drive_mode.load();
+        int room_val = room.load();
         RefSpeed cmd{SPEED, SPEED};
 
         /* ----------  drive_mode 0 : raw joystick  ---------- */
@@ -117,36 +130,76 @@ int main(int argc, char* argv[])
         {
         
             bool  f_ok = front_clear.load();
+            bool b_ok  = !back_clear.load(std::memory_order_relaxed);
             bool  l_ok = left_turn_clear.load();
-            float d6   = uwb_sub->dist6();      // front beacon
+            //float d6   = 0.0;      // front beacon
             float d2   = uwb_sub->dist2();      // left-flank sensor
+            float d3   = uwb_sub->dist3();      // left-flank sensor
             
            RCLCPP_INFO(node->get_logger(),
               "UWB2: %f", d2);
+              RCLCPP_INFO(node->get_logger(),
+              "UWB3: %f", d3);
            
-            RefSpeed cmd{SPEED, SPEED};
-            ref_pub->trigger_publish(cmd);
             
-
-
-
-            /* d6 beacon → hard stop */
-            if (d6 > 0.f && d6 < UWB_STOP_RANGE)
-            {
-                cmd = {0,0};
-                ref_pub->trigger_publish(cmd);  loop.sleep();  continue;
+            if (room_val == 419 && d3 > UWB_STOPPING_FIRST && turning90 == false){
+            	RefSpeed cmd{SPEED, SPEED};
+            	if (!f_ok && !b_ok) {                // both ways blocked
+            		cmd = {0, 0};
+            	} else if (!f_ok) {                 // stop forward
+            		if (cmd.leftSpeed  > 0) cmd.leftSpeed  = 0;
+            		if (cmd.rightSpeed > 0) cmd.rightSpeed = 0;
+            	} else if (!b_ok) {                          // stop reverse
+            		if (cmd.leftSpeed  < 0) cmd.leftSpeed  = 0;
+            		if (cmd.rightSpeed < 0) cmd.rightSpeed = 0;
+            	}
+            	ref_pub->trigger_publish(cmd);
+            	loop.sleep();
+            	continue;
             }
-
+            
+            if (room_val == 419 && d3 > 0 && d3 < UWB_STOPPING_FIRST && turning90 == false)
+            {
+            	RefSpeed cmd{0, 0};
+            	ref_pub->trigger_publish(cmd);
+            	loop.sleep();
+            	continue;
+            	
+            }
+            
             /* d2 trigger → one 90° spin (left) then hand off to FSM */
-            if (d2 > 0 && d2 < UWB_TURN_RANGE && turning90 == false)
+            if (room_val == 400 && d2 > 0 && d2 < UWB_TURN_RANGE && turning90 == false)
             {
                 turning90 = true;
                 spin_start = steady_clock.now();
                 turn_t = 0.0;
                 RCLCPP_INFO(node->get_logger(), "Starting turn");
+                loop.sleep();
+                continue;
                 
             }
             
+            if (room_val == 400 && turning90 == false) {
+            
+            	bool  front_ok = front_clear.load();
+            	bool back_ok  = !back_clear.load(std::memory_order_relaxed);
+            
+            	RefSpeed cmd{SPEED, SPEED};
+            	if (!front_ok && !back_ok) {                // both ways blocked
+            		cmd = {0, 0};
+            	} else if (!front_ok) {                 // stop forward
+            		if (cmd.leftSpeed  > 0) cmd.leftSpeed  = 0;
+            		if (cmd.rightSpeed > 0) cmd.rightSpeed = 0;
+            	} else if (!back_ok) {                          // stop reverse
+            		if (cmd.leftSpeed  < 0) cmd.leftSpeed  = 0;
+            		if (cmd.rightSpeed < 0) cmd.rightSpeed = 0;
+            	}
+            	ref_pub->trigger_publish(cmd);
+            	loop.sleep();
+            	continue;
+            
+            }
+
             if(turning90 == true  && !after_spin){
             	double elapsed = (steady_clock.now() - spin_start).seconds();
             	RCLCPP_INFO(node->get_logger(), "Turning");
@@ -171,17 +224,29 @@ int main(int argc, char* argv[])
             /* After the spin, immediately run the complex FSM */
             if (after_spin)
             {
+            	float d6   = uwb_sub->dist6();
+            	
+            	 /* d6 beacon → hard stop */
+            	if (d6 > 0.f && d6 < UWB_STOP_RANGE)
+            	{
+                	cmd = {0,0};
+                	ref_pub->trigger_publish(cmd);  loop.sleep();  continue;
+            	}
+            	
+            	bool front_ok = front_clear.load();
+            	bool left_ok  =  left_turn_clear.load();
                 switch (mode)
                 {
                 case Mode::STRAIGHT:
-                    if (!f_ok) {
-                        if (!l_ok)          mode = Mode::STOP;
-                        else { pivot_dir = -1; timer = 0; mode = Mode::PIVOT; }
+                    if (!front_ok) {
+                        if (!left_ok)          mode = Mode::STOP;
+                        else { pivot_dir = -1; timer = 0.0; mode = Mode::PIVOT; }
                     }
                     break;
 
                 case Mode::PIVOT:
-                    if (!l_ok) { mode = Mode::STOP; break; }
+
+                    if (!left_ok) { mode = Mode::STOP; break; }
                     timer += DT;
                     cmd.leftSpeed  = (pivot_dir == +1) ? SPEED       : INNER_SPEED;
                     cmd.rightSpeed = (pivot_dir == +1) ? INNER_SPEED : SPEED;
@@ -192,18 +257,24 @@ int main(int argc, char* argv[])
                     break;
 
                 case Mode::RETURN:
-                    if (!l_ok) { mode = Mode::STOP; break; }
+
+                    if (!left_ok) { mode = Mode::STOP; break; }
+
                     timer += DT;
                     cmd.leftSpeed  = (pivot_dir == +1) ? SPEED       : INNER_SPEED;
                     cmd.rightSpeed = (pivot_dir == +1) ? INNER_SPEED : SPEED;
                     if (timer >= RETURN_TIME) {
-                        timer = 0;  mode = f_ok ? Mode::STRAIGHT : Mode::STOP;
+
+                        timer = 0;  mode = front_ok ? Mode::STRAIGHT : Mode::STOP;
+
                     }
                     break;
 
                 case Mode::STOP:
                     cmd = {0,0};
-                    if (f_ok) mode = Mode::STRAIGHT;
+
+                    if (front_ok) mode = Mode::STRAIGHT;
+
                     break;
                 }
 

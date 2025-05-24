@@ -27,4 +27,3 @@ private:
     std::atomic<float> dist1_{0.f}, dist2_{0.f}, dist3_{0.f},
                        dist4_{0.f}, dist5_{0.f}, dist6_{0.f};
 };
-

@@ -12,10 +12,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(wheelchair_sensor_msgs REQUIRED)
-find_package(Eigen3 REQUIRED NO_MODULE) 
-find_package(tf2 REQUIRED)           
-find_package(tf2_ros REQUIRED)    
-find_package(tf2_sensor_msgs REQUIRED)  
+find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -25,7 +25,7 @@ find_package(rosidl_typesupport_interface REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io filters visualization)
 find_package(rcl_interfaces REQUIRED)
 
-link_directories(${PCL_LIBRARY_DIRS})            
+link_directories(${PCL_LIBRARY_DIRS})
 
 add_library(obstacle_publisher
   src/obstacle_publisher.cpp
@@ -66,8 +66,8 @@ add_executable(wheelchair
   src/uwb_subscriber.cpp
 )
 
-add_executable(stopping 
-  src/main_stopping.cpp
+add_executable(stopping
+  src/main_turning.cpp
   src/fan_publisher.cpp
   src/light_publisher.cpp
   src/ref_speed_publisher.cpp
@@ -106,12 +106,43 @@ target_include_directories(stopping PUBLIC
 )
 
 target_link_libraries(wheelchair
-  obstacle_publisher         
+  obstacle_publisher
   Eigen3::Eigen
 )
 
 target_link_libraries(stopping
-  obstacle_publisher         
+  obstacle_publisher
+  Eigen3::Eigen
+)
+
+add_executable(compass
+  src/Compass_Nav.cpp
+  src/fan_publisher.cpp
+  src/light_publisher.cpp
+  src/ref_speed_publisher.cpp
+  src/fingerprint_subscriber.cpp
+  src/sensors_subscriber.cpp
+  src/obstacle_subscriber.cpp
+  src/speed_publisher.cpp
+  src/heading.cpp
+)
+
+ament_target_dependencies(compass
+  rclcpp
+  wheelchair_sensor_msgs
+  sensor_msgs
+  std_msgs
+  pcl_conversions
+)
+
+target_include_directories(compass PUBLIC
+  ${EIGEN3_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/headers
+)
+
+target_link_libraries(compass
+  obstacle_publisher
   Eigen3::Eigen
 )
 
@@ -126,7 +157,7 @@ target_include_directories(obstacle_publisher_node PUBLIC
 )
 
 target_link_libraries(obstacle_publisher_node
-  obstacle_publisher          
+  obstacle_publisher
 )
 
 install(TARGETS
@@ -134,9 +165,10 @@ install(TARGETS
   obstacle_publisher_node
   obstacle_publisher
   stopping
+  compass
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY headers/ DESTINATION include)   
+install(DIRECTORY headers/ DESTINATION include)
 
 ament_package()
