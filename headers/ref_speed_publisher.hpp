@@ -18,7 +18,7 @@ class RefSpeedPublisher {
 public:
   RefSpeedPublisher(rclcpp::Node::SharedPtr node);
 
-  void trigger_publish(RefSpeed ref_speed);
+  void trigger_publish(const RefSpeed& ref_speed);
 
 private:
     rclcpp::Node::SharedPtr node_;
