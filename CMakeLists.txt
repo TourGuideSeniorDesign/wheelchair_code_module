@@ -115,8 +115,8 @@ target_link_libraries(stopping
   Eigen3::Eigen
 )
 
-add_executable(compass
-  src/Compass_Nav.cpp
+add_executable(gyro
+  src/gyro_turn.cpp
   src/fan_publisher.cpp
   src/light_publisher.cpp
   src/ref_speed_publisher.cpp
@@ -127,7 +127,7 @@ add_executable(compass
   src/heading.cpp
 )
 
-ament_target_dependencies(compass
+ament_target_dependencies(gyro
   rclcpp
   wheelchair_sensor_msgs
   sensor_msgs
@@ -135,13 +135,13 @@ ament_target_dependencies(compass
   pcl_conversions
 )
 
-target_include_directories(compass PUBLIC
+target_include_directories(gyro PUBLIC
   ${EIGEN3_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/headers
 )
 
-target_link_libraries(compass
+target_link_libraries(gyro
   obstacle_publisher
   Eigen3::Eigen
 )
@@ -185,7 +185,7 @@ install(TARGETS
   obstacle_publisher_node
   obstacle_publisher
   stopping
-  compass
+  gyro
   temp_monitor
   DESTINATION lib/${PROJECT_NAME}
 )
