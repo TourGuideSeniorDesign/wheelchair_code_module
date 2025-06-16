@@ -78,8 +78,8 @@ int main(int argc, char** argv) {
         }
     });
 
-    // Set the rate to 10 Hz
-    rclcpp::Rate rate(10);
+    // Set the rate to 1 Hz
+    rclcpp::Rate rate(1);
 
     RCLCPP_INFO(node->get_logger(), "Monitoring CPU temperature (press Ctrl+C to stop):");
     while (rclcpp::ok() && running) {
@@ -89,43 +89,37 @@ int main(int argc, char** argv) {
         } else {
             RCLCPP_INFO(node->get_logger(), "CPU Temperature: %f °C", tempC);
 
-            FanSpeed newFanSpeed;
-
             if (tempC < 30.0) {
-                newFanSpeed.fan_percent_0 = 0;
-                newFanSpeed.fan_percent_1 = 0;
-                newFanSpeed.fan_percent_2 = 0;
-                newFanSpeed.fan_percent_3 = 0;
-            } else if (tempC < 40.0) {
-                newFanSpeed.fan_percent_0 = 25;
-                newFanSpeed.fan_percent_1 = 25;
-                newFanSpeed.fan_percent_2 = 25;
-                newFanSpeed.fan_percent_3 = 25;
-            } else if (tempC < 50.0) {
-                newFanSpeed.fan_percent_0 = 50;
-                newFanSpeed.fan_percent_1 = 50;
-                newFanSpeed.fan_percent_2 = 50;
-                newFanSpeed.fan_percent_3 = 50;
-            } else {
-                newFanSpeed.fan_percent_0 = 75;
-                newFanSpeed.fan_percent_1 = 75;
-                newFanSpeed.fan_percent_2 = 75;
-                newFanSpeed.fan_percent_3 = 75;
-            }
-
-            // Static flag to ensure first publish happens
-            static bool first_run = true;
-            static FanSpeed lastFanSpeed;
-
-            if (first_run ||
-                newFanSpeed.fan_percent_0 != lastFanSpeed.fan_percent_0 ||
-                newFanSpeed.fan_percent_1 != lastFanSpeed.fan_percent_1 ||
-                newFanSpeed.fan_percent_2 != lastFanSpeed.fan_percent_2 ||
-                newFanSpeed.fan_percent_3 != lastFanSpeed.fan_percent_3) {
-
-                fan_publisher->trigger_publish(newFanSpeed);
-                lastFanSpeed = newFanSpeed;
-                first_run = false;
+                // Handle case for temperatures below 30°C
+                FanSpeed fanSpeed;
+                fanSpeed.fan_percent_0 = 0;
+                fanSpeed.fan_percent_1 = 0;
+                fanSpeed.fan_percent_2 = 0;
+                fanSpeed.fan_percent_3 = 0;
+                fan_publisher->trigger_publish(fanSpeed);
+            } else if (tempC >= 30.0 && tempC < 40.0) {
+                // Handle case for temperatures between 30°C and 40°C
+                FanSpeed fanSpeed;
+                fanSpeed.fan_percent_0 = 25;
+                fanSpeed.fan_percent_1 = 25;
+                fanSpeed.fan_percent_2 = 25;
+                fanSpeed.fan_percent_3 = 25;
+                fan_publisher->trigger_publish(fanSpeed);
+            } else if (tempC >= 40.0 && tempC < 50) {
+                // Handle case for temperatures between 40 and 50
+                FanSpeed fanSpeed;
+                fanSpeed.fan_percent_0 = 50;
+                fanSpeed.fan_percent_1 = 50;
+                fanSpeed.fan_percent_2 = 50;
+                fanSpeed.fan_percent_3 = 50;
+                fan_publisher->trigger_publish(fanSpeed);
+            } else if (tempC >= 50.0){
+                FanSpeed fanSpeed;
+                fanSpeed.fan_percent_0 = 75;
+                fanSpeed.fan_percent_1 = 75;
+                fanSpeed.fan_percent_2 = 75;
+                fanSpeed.fan_percent_3 = 75;
+                fan_publisher->trigger_publish(fanSpeed);
             }
         }
 
