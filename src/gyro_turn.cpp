@@ -24,6 +24,7 @@ std::atomic_bool back_clear{true};
 std::atomic_bool left_turn_clear{true};   //  ← we *only* use this one
 std::atomic_bool right_turn_clear{true};  //  kept for wiring; ignored
 std::atomic_int  drive_mode{0};
+std::atomic_int  room{0};
 
 /* ── FSM ────────────────────────────────────────────────── */
 enum class Mode { STRAIGHT, PIVOT, RETURN_PIVOT, STOP };
@@ -47,6 +48,14 @@ int main(int argc, char *argv[])
         [node](std_msgs::msg::Int32::SharedPtr m){
             drive_mode.store(m->data, std::memory_order_relaxed);
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
+        });
+
+    auto electron_room = node->create_subscription<std_msgs::msg::Int32>(
+        "electron_room", 10,
+        [node](std_msgs::msg::Int32::SharedPtr m)
+        {
+            room.store(m->data, std::memory_order_relaxed);
+            //RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
 
     rclcpp::executors::SingleThreadedExecutor exec;
@@ -75,11 +84,21 @@ int main(int argc, char *argv[])
         }
         /* ─ mode 2: autonomous ─ */
         if (drive_mode.load() == 2) {
-
-            const float target_angle = 90.0;
+            static float target_angle = -90.0;
             static float curr_angle = 0;
             static float prev_error = 0.0f;
+            static bool target_reached = false;
             static auto prevTime = std::chrono::steady_clock::now(); // initilization
+            RefSpeed cmd{0, 0};
+
+
+            //used to set the angle during testing
+            int room_val = room.load();
+            if(room_val == 419 && !target_reached){
+                target_angle = 90;
+            } else if (room_val == 400 && !target_reached){
+                target_angle = -90;
+            }
 
             auto sensorValue = sensors_sub->get_latest_sensor_data();
             float gyro_vel_z = sensorValue.angular_velocity_z * (180.0f / M_PI);
@@ -89,6 +108,15 @@ int main(int argc, char *argv[])
 
             curr_angle += gyro_vel_z * dt;
 
+            if(target_reached){
+                RCLCPP_INFO(node->get_logger(), "Target angle reached");
+                curr_angle = 0;
+                cmd= RefSpeed{0, 0};
+                ref_pub->trigger_publish(cmd);
+                loop.sleep();
+                continue;
+            }
+
             //PD controller
             float error = target_angle - curr_angle;
             float derivative = (error - prev_error) / dt;
@@ -96,15 +124,30 @@ int main(int argc, char *argv[])
             const float Kp = 1.0f;
             const float Kd = 0.2f;
 
-            float output = Kp * error + Kd * derivative;
+            float output = abs(Kp * error + Kd * derivative);
 
             const float maxSpeed = SPEED;
             output = std::clamp(output, -maxSpeed, maxSpeed);
 
-            RefSpeed cmd{0, static_cast<int8_t>(output)};
+            if(std::abs(error) < 0){
+                target_reached = true;
+                cmd = RefSpeed{0, 0};
+                ref_pub->trigger_publish(cmd);
+                loop.sleep();
+                continue;
+            }
+
+            if(target_angle < 0){ //right is negative angle
+                cmd = RefSpeed{static_cast<int8_t>(output), 0};
+            } else if(target_angle > 0){ //left is positive angle
+                cmd = RefSpeed{0, static_cast<int8_t>(output)};
+            }
+
             ref_pub->trigger_publish(cmd);
 
-            RCLCPP_INFO(node->get_logger(), "Angle = %.2f deg, Output speed = %.2f", curr_angle, output);
+            RCLCPP_INFO(node->get_logger(), "Turning… angle = %.3f deg / %.3f deg", curr_angle, target_angle);
+            RCLCPP_INFO(node->get_logger(), "Error = %.3f ", std::abs(error));
+            //RCLCPP_INFO(node->get_logger(), "Angle = %.2f deg, Output speed = %.2f", curr_angle, output);
 
             prev_error = error;
 
