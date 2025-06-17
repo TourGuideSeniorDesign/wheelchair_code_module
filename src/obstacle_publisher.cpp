@@ -38,8 +38,8 @@ constexpr float F_BOX_X_MIN = 0.0f,  F_BOX_X_MAX = 0.60f,  F_BOX_Y_HALF = 0.75f;
 constexpr float B_BOX_X_MIN = -0.40f, B_BOX_X_MAX = -0.05f, B_BOX_Y_HALF = 0.75f;
 
 /* tunnel “wall warn” thresholds --------------------------------------- */
-constexpr float F_TUNNEL_Y_HALF = 0.50f, F_WALL_WARN =  1.10f;
-constexpr float B_TUNNEL_Y_HALF = 0.50f, B_WALL_WARN = -1.10f;
+constexpr float F_TUNNEL_Y_HALF = 0.50f, F_WALL_WARN =  1.75f;
+constexpr float B_TUNNEL_Y_HALF = 0.50f, B_WALL_WARN = -1.75f;
 
 /* *** side‑cone parameters *** --------------------- */
 constexpr float CONE_HALF_ANGLE = static_cast<float>(M_PI) * 35.0f / 180.0f; // ±35°
