@@ -5,9 +5,9 @@
  *   1 : joystick + obstacle brakes
  *   2 : autonomous explained above
  */
- 
+
 #include "main.h"
-#include "uwb_subscriber.hpp"  
+#include "uwb_subscriber.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensors_subscriber.hpp"
 #include "obstacle_subscriber.hpp"
@@ -15,6 +15,7 @@
 #include <std_msgs/msg/int32.hpp>
 #include <atomic>
 #include <thread>
+#include <cstdlib>
 
 /* ── constants ─────────────────────────────────────────── */
 constexpr int    SPEED           = 30;
@@ -23,8 +24,8 @@ constexpr double PIVOT_TIME      = 2.5;
 constexpr double RETURN_TIME     = 2.5;
 constexpr float  UWB_STOP_RANGE  = 4.5;   // d6 ≤ 2.15 m → hard stop
 constexpr float  UWB_TURN_RANGE  = 3.0;   // d2 ≤ 3.0  m → spin + FSM
-constexpr double TURN90_TIME     = 3.2; 
-constexpr double UWB_STOPPING_FIRST = 1.9;    
+constexpr double TURN90_TIME     = 3.2;
+constexpr double UWB_STOPPING_FIRST = 1.9;
 
 
 /* ── shared flags set by subscribers ───────────────────── */
@@ -66,7 +67,7 @@ int main(int argc, char* argv[])
             drive_mode.store(m->data, std::memory_order_relaxed);
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
-        
+
 
     auto electron_room = node->create_subscription<std_msgs::msg::Int32>(
         "electron_room", 10,
@@ -75,18 +76,18 @@ int main(int argc, char* argv[])
             room.store(m->data, std::memory_order_relaxed);
             RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
         });
-        
+
 
     /* receive message from UWB sensors */
     auto uwb_sub = std::make_shared<UWBSubscriber>(node);
-    
+
 
     /* spin ROS callbacks in a background thread */
     rclcpp::executors::SingleThreadedExecutor exec;
-    exec.add_node(node);               
+    exec.add_node(node);
     std::thread spin_thread([&]{ exec.spin(); });
-    rclcpp::Clock steady_clock{RCL_STEADY_TIME}; 
-    rclcpp::Time  spin_start;                      
+    rclcpp::Clock steady_clock{RCL_STEADY_TIME};
+    rclcpp::Time  spin_start;
 
     /* main control loop – 30 Hz */
     rclcpp::Rate loop(30);
@@ -99,19 +100,19 @@ int main(int argc, char* argv[])
         RefSpeed cmd{SPEED, SPEED};
 
         /* ----------  drive_mode 0 : raw joystick  ---------- */
-        
+
         if (sel == 0) {
             auto j = sensors_sub->get_latest_sensor_data();
             cmd.leftSpeed  = j.left_speed;
             cmd.rightSpeed = j.right_speed;
-            ref_pub->trigger_publish(cmd);  
-            loop.sleep();  
+            ref_pub->trigger_publish(cmd);
+            loop.sleep();
             continue;
         }
 
         /* ----------  drive_mode 1 : joystick + brakes  ----- */
         if (sel == 1) {
-            
+
             auto j = sensors_sub->get_latest_sensor_data();
             cmd.leftSpeed  = j.left_speed;
             cmd.rightSpeed = j.right_speed;
@@ -128,20 +129,20 @@ int main(int argc, char* argv[])
         /* ----------  drive_mode 2 : autonomous  ------------ */
         if (sel == 2)
         {
-        
+
             bool  f_ok = front_clear.load();
             bool b_ok  = !back_clear.load(std::memory_order_relaxed);
             bool  l_ok = left_turn_clear.load();
             //float d6   = 0.0;      // front beacon
             float d2   = uwb_sub->dist2();      // left-flank sensor
             float d3   = uwb_sub->dist3();      // left-flank sensor
-            
+
            RCLCPP_INFO(node->get_logger(),
               "UWB2: %f", d2);
               RCLCPP_INFO(node->get_logger(),
               "UWB3: %f", d3);
-           
-            
+
+
             if (room_val == 419 && d3 > UWB_STOPPING_FIRST && turning90 == false){
             	RefSpeed cmd{SPEED, SPEED};
             	if (!f_ok && !b_ok) {                // both ways blocked
@@ -157,16 +158,16 @@ int main(int argc, char* argv[])
             	loop.sleep();
             	continue;
             }
-            
+
             if (room_val == 419 && d3 > 0 && d3 < UWB_STOPPING_FIRST && turning90 == false)
             {
             	RefSpeed cmd{0, 0};
             	ref_pub->trigger_publish(cmd);
             	loop.sleep();
             	continue;
-            	
+
             }
-            
+
             /* d2 trigger → one 90° spin (left) then hand off to FSM */
             if (room_val == 400 && d2 > 0 && d2 < UWB_TURN_RANGE && turning90 == false)
             {
@@ -176,14 +177,14 @@ int main(int argc, char* argv[])
                 RCLCPP_INFO(node->get_logger(), "Starting turn");
                 loop.sleep();
                 continue;
-                
+
             }
-            
+
             if (room_val == 400 && turning90 == false) {
-            
+
             	bool  front_ok = front_clear.load();
             	bool back_ok  = !back_clear.load(std::memory_order_relaxed);
-            
+
             	RefSpeed cmd{SPEED, SPEED};
             	if (!front_ok && !back_ok) {                // both ways blocked
             		cmd = {0, 0};
@@ -197,7 +198,7 @@ int main(int argc, char* argv[])
             	ref_pub->trigger_publish(cmd);
             	loop.sleep();
             	continue;
-            
+
             }
 
             if(turning90 == true  && !after_spin){
@@ -205,34 +206,34 @@ int main(int argc, char* argv[])
             	RCLCPP_INFO(node->get_logger(), "Turning");
             	if (elapsed < TURN90_TIME) {
                     RefSpeed cmd{0, SPEED};
-                    ref_pub->trigger_publish(cmd); 
+                    ref_pub->trigger_publish(cmd);
                     RCLCPP_INFO(node->get_logger(),
                     "Turning… elapsed = %.3f s / %.3f s",
                     elapsed, TURN90_TIME);
-                    loop.sleep();  
+                    loop.sleep();
                     continue;
                 }
                 /* spin finished */
-                //turning90 = false; 
+                //turning90 = false;
                 after_spin = true;
                 cmd = {0,0};
                 ref_pub->trigger_publish(cmd);  loop.sleep();  continue;
-                
+
             }
-           
+
 
             /* After the spin, immediately run the complex FSM */
             if (after_spin)
             {
             	float d6   = uwb_sub->dist6();
-            	
+
             	 /* d6 beacon → hard stop */
             	if (d6 > 0.f && d6 < UWB_STOP_RANGE)
             	{
                 	cmd = {0,0};
                 	ref_pub->trigger_publish(cmd);  loop.sleep();  continue;
             	}
-            	
+
             	bool front_ok = front_clear.load();
             	bool left_ok  =  left_turn_clear.load();
                 switch (mode)
