@@ -50,14 +50,6 @@ int main(int argc, char* argv[])
         });
 
 
-    auto electron_room = node->create_subscription<std_msgs::msg::Int32>(
-        "electron_room", 10,
-        [node](std_msgs::msg::Int32::SharedPtr m)
-        {
-            room.store(m->data, std::memory_order_relaxed);
-            RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
-        });
-
     /* spin ROS callbacks in a background thread */
     rclcpp::executors::SingleThreadedExecutor exec;
     exec.add_node(node);
