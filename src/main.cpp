@@ -11,6 +11,7 @@
 #include "sensors_subscriber.hpp"
 #include "obstacle_subscriber.hpp"
 #include "ref_speed_publisher.hpp"
+#include "logger.hpp"
 #include <std_msgs/msg/int32.hpp>
 #include <atomic>
 #include <thread>
@@ -34,11 +35,17 @@ int main(int argc, char* argv[])
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared("wheelchair_code_module");
 
+    /* Initialize logger */
+    Logger::init(node, "https://autogiro-test-api.noah.dev/api/logs", "wheelchair_code_module");
+    LOG_INFO("Wheelchair code module starting up");
+
     /* pubs / subs */
     auto sensors_sub  = std::make_shared<SensorsSubscriber>(node);
     auto obstacle_sub = std::make_shared<ObstacleSubscriber>(
         node, front_clear, back_clear, left_turn_clear, right_turn_clear);
     auto ref_pub      = std::make_shared<RefSpeedPublisher>(node);
+    
+    LOG_INFO("All publishers and subscribers initialized");
 
     /* receive drive-mode commands from Electron GUI */
     auto electron_sub = node->create_subscription<std_msgs::msg::Int32>(
@@ -46,7 +53,7 @@ int main(int argc, char* argv[])
         [node](std_msgs::msg::Int32::SharedPtr m)
         {
             drive_mode.store(m->data, std::memory_order_relaxed);
-            RCLCPP_INFO(node->get_logger(), "[RX] drive-mode=%d", m->data);
+            LOG_INFO("Drive mode changed to: " + std::to_string(m->data));
         });
 
 
@@ -122,8 +129,10 @@ int main(int argc, char* argv[])
         loop.sleep();     // unknown drive_mode
     }
 
+    LOG_INFO("Shutting down wheelchair code module");
     exec.cancel();  
     spin_thread.join();
+    Logger::shutdown();
     rclcpp::shutdown();
     return 0;
 }

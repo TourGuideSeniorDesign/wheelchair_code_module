@@ -24,8 +24,25 @@ find_package(rmw REQUIRED)
 find_package(rosidl_typesupport_interface REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io filters visualization)
 find_package(rcl_interfaces REQUIRED)
+find_package(CURL REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
+
+add_library(logger
+  src/logger.cpp
+)
+
+ament_target_dependencies(logger
+  rclcpp
+)
+
+target_include_directories(logger PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/headers
+)
+
+target_link_libraries(logger
+  ${CURL_LIBRARIES}
+)
 
 add_library(obstacle_publisher
   src/obstacle_publisher.cpp
@@ -107,12 +124,16 @@ target_include_directories(stopping PUBLIC
 
 target_link_libraries(wheelchair
   obstacle_publisher
+  logger
   Eigen3::Eigen
+  ${CURL_LIBRARIES}
 )
 
 target_link_libraries(stopping
   obstacle_publisher
+  logger
   Eigen3::Eigen
+  ${CURL_LIBRARIES}
 )
 
 add_executable(gyro
@@ -143,7 +164,9 @@ target_include_directories(gyro PUBLIC
 
 target_link_libraries(gyro
   obstacle_publisher
+  logger
   Eigen3::Eigen
+  ${CURL_LIBRARIES}
 )
 
 add_executable(obstacle_publisher_node
@@ -184,6 +207,7 @@ install(TARGETS
   wheelchair
   obstacle_publisher_node
   obstacle_publisher
+  logger
   stopping
   gyro
   temp_monitor
