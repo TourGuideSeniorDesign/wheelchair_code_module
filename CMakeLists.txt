@@ -74,25 +74,22 @@ target_link_libraries(obstacle_publisher
 add_executable(wheelchair
   src/main.cpp
   src/fan_publisher.cpp
-  src/light_publisher.cpp
   src/ref_speed_publisher.cpp
-  src/fingerprint_subscriber.cpp
   src/sensors_subscriber.cpp
   src/obstacle_subscriber.cpp
-  src/speed_publisher.cpp
-  src/uwb_subscriber.cpp
 )
 
-add_executable(stopping
-  src/main_turning.cpp
-  src/fan_publisher.cpp
-  src/light_publisher.cpp
-  src/ref_speed_publisher.cpp
-  src/fingerprint_subscriber.cpp
-  src/sensors_subscriber.cpp
-  src/obstacle_subscriber.cpp
-  src/speed_publisher.cpp
- )
+# Commented out - missing source files
+# add_executable(stopping
+#   src/main_turning.cpp
+#   src/fan_publisher.cpp
+#   src/light_publisher.cpp
+#   src/ref_speed_publisher.cpp
+#   src/fingerprint_subscriber.cpp
+#   src/sensors_subscriber.cpp
+#   src/obstacle_subscriber.cpp
+#   src/speed_publisher.cpp
+# )
 
 ament_target_dependencies(wheelchair
   rclcpp
@@ -102,13 +99,13 @@ ament_target_dependencies(wheelchair
   pcl_conversions
 )
 
-ament_target_dependencies(stopping
-  rclcpp
-  wheelchair_sensor_msgs
-  sensor_msgs
-  std_msgs
-  pcl_conversions
-)
+# ament_target_dependencies(stopping
+#   rclcpp
+#   wheelchair_sensor_msgs
+#   sensor_msgs
+#   std_msgs
+#   pcl_conversions
+# )
 
 target_include_directories(wheelchair PUBLIC
   ${EIGEN3_INCLUDE_DIRS}
@@ -116,11 +113,11 @@ target_include_directories(wheelchair PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/headers
 )
 
-target_include_directories(stopping PUBLIC
-  ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/headers
-)
+# target_include_directories(stopping PUBLIC
+#   ${EIGEN3_INCLUDE_DIRS}
+#   ${PCL_INCLUDE_DIRS}
+#   ${CMAKE_CURRENT_SOURCE_DIR}/headers
+# )
 
 target_link_libraries(wheelchair
   obstacle_publisher
@@ -129,59 +126,61 @@ target_link_libraries(wheelchair
   ${CURL_LIBRARIES}
 )
 
-target_link_libraries(stopping
-  obstacle_publisher
-  logger
-  Eigen3::Eigen
-  ${CURL_LIBRARIES}
-)
+# target_link_libraries(stopping
+#   obstacle_publisher
+#   logger
+#   Eigen3::Eigen
+#   ${CURL_LIBRARIES}
+# )
 
-add_executable(gyro
-  src/gyro_turn.cpp
-  src/fan_publisher.cpp
-  src/light_publisher.cpp
-  src/ref_speed_publisher.cpp
-  src/fingerprint_subscriber.cpp
-  src/sensors_subscriber.cpp
-  src/obstacle_subscriber.cpp
-  src/speed_publisher.cpp
-  src/heading.cpp
-)
+# Commented out - missing source files
+# add_executable(gyro
+#   src/gyro_turn.cpp
+#   src/fan_publisher.cpp
+#   src/light_publisher.cpp
+#   src/ref_speed_publisher.cpp
+#   src/fingerprint_subscriber.cpp
+#   src/sensors_subscriber.cpp
+#   src/obstacle_subscriber.cpp
+#   src/speed_publisher.cpp
+#   src/heading.cpp
+# )
+# 
+# ament_target_dependencies(gyro
+#   rclcpp
+#   wheelchair_sensor_msgs
+#   sensor_msgs
+#   std_msgs
+#   pcl_conversions
+# )
+# 
+# target_include_directories(gyro PUBLIC
+#   ${EIGEN3_INCLUDE_DIRS}
+#   ${PCL_INCLUDE_DIRS}
+#   ${CMAKE_CURRENT_SOURCE_DIR}/headers
+# )
+# 
+# target_link_libraries(gyro
+#   obstacle_publisher
+#   logger
+#   Eigen3::Eigen
+#   ${CURL_LIBRARIES}
+# )
 
-ament_target_dependencies(gyro
-  rclcpp
-  wheelchair_sensor_msgs
-  sensor_msgs
-  std_msgs
-  pcl_conversions
-)
-
-target_include_directories(gyro PUBLIC
-  ${EIGEN3_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/headers
-)
-
-target_link_libraries(gyro
-  obstacle_publisher
-  logger
-  Eigen3::Eigen
-  ${CURL_LIBRARIES}
-)
-
-add_executable(obstacle_publisher_node
-  src/obstacle_publisher_node.cpp
-)
-
-ament_target_dependencies(obstacle_publisher_node rclcpp)
-
-target_include_directories(obstacle_publisher_node PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/headers
-)
-
-target_link_libraries(obstacle_publisher_node
-  obstacle_publisher
-)
+# Commented out - missing source file
+# add_executable(obstacle_publisher_node
+#   src/obstacle_publisher_node.cpp
+# )
+# 
+# ament_target_dependencies(obstacle_publisher_node rclcpp)
+# 
+# target_include_directories(obstacle_publisher_node PUBLIC
+#   ${CMAKE_CURRENT_SOURCE_DIR}/headers
+# )
+# 
+# target_link_libraries(obstacle_publisher_node
+#   obstacle_publisher
+# )
 
 # Adding the fan speed executable
 add_executable(temp_monitor
@@ -205,11 +204,8 @@ target_include_directories(
 
 install(TARGETS
   wheelchair
-  obstacle_publisher_node
   obstacle_publisher
   logger
-  stopping
-  gyro
   temp_monitor
   DESTINATION lib/${PROJECT_NAME}
 )
