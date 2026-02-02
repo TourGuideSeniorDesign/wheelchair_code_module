@@ -32,7 +32,7 @@ std::atomic_int room{0};
 /* ─────────────────────────────────────────────────────── */
 int main(int argc, char *argv[]) {
   Logger::init("wheelchair_code_module",
-               "https://autogiro-test-api.noah.dev/api/logs");
+               "https://autogiro-test-api.noah.dev/api/logs", true);
   Logger::info("Application started");
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("wheelchair_code_module");
