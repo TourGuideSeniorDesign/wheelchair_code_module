@@ -56,6 +56,7 @@ target_link_libraries(obstacle_publisher
 
 add_executable(wheelchair
   src/main.cpp
+  src/logger.cpp
   src/fan_publisher.cpp
   src/ref_speed_publisher.cpp
   src/sensors_subscriber.cpp
@@ -79,6 +80,7 @@ target_include_directories(wheelchair PUBLIC
 target_link_libraries(wheelchair
   obstacle_publisher
   Eigen3::Eigen
+  curl
 )
 
 # Adding the fan speed executable
