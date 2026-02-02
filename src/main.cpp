@@ -134,5 +134,6 @@ int main(int argc, char *argv[]) {
   spin_thread.join();
   rclcpp::shutdown();
   Logger::info("Application shutdown");
-  Logger::shutdown() return 0;
+  Logger::shutdown();
+  return 0;
 }
